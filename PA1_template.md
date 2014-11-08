@@ -30,7 +30,8 @@ The dataset is stored in a comma-separated-value (CSV) file and there are a tota
 ##  **Key findings of the data analysis with reproducible code**
   
 ###  Loading and preprocessing the data
-```{r, echo=TRUE}
+
+```r
 #url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 #temp <- tempfile()
 #download.file(url, temp)
@@ -39,11 +40,11 @@ The dataset is stored in a comma-separated-value (CSV) file and there are a tota
 suppressMessages(library(dplyr))
 activity <- tbl_df(read.csv("~/R/workspace/reproducible_research/xactivity.csv")) %>%
   mutate(date = as.Date(date, "%Y-%m-%d"))
-
 ```
   
 ###  What is mean total number of steps taken per day?
-```{r, echo=TRUE}
+
+```r
 daily_steps <- activity %>% 
   group_by(date) %>% 
   summarise(total_steps = sum(steps, na.rm = TRUE))
@@ -57,15 +58,26 @@ g <- ggplot(data=daily_steps, aes(x=date, y=total_steps)) +
 plot(g)
 ```
 
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png) 
+
 The mean and median total number of steps taken per day is 10766.19 and 10765 respectively.
-```{r}
+
+```r
 daily_steps %>% 
   filter(total_steps > 0) %>% 
   summarise(mean = mean(total_steps), median = median(total_steps))
 ```
 
+```
+## Source: local data frame [1 x 2]
+## 
+##       mean median
+## 1 10766.19  10765
+```
+
 ###  What is the average daily activity pattern?
-```{r}
+
+```r
 daily_activity <- activity %>% 
   filter(steps >= 0) %>% 
   group_by(interval) %>% 
@@ -82,12 +94,22 @@ q <- ggplot(daily_activity, aes(x=interval/100, y=mean)) +
 plot(q)
 ```
 
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png) 
+
 The **835** 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps.
 
-```{r}
+
+```r
 daily_activity %>% 
   arrange(desc(mean)) %>% 
   slice(1) %>% 
   select(interval)
+```
+
+```
+## Source: local data frame [1 x 1]
+## 
+##   interval
+## 1      835
 ```
 
