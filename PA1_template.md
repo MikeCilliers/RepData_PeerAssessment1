@@ -31,15 +31,17 @@ The dataset is stored in a comma-separated-value (CSV) file and there are a tota
   
 ###  Loading and preprocessing the data
 
+
 ```r
-#url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
-#temp <- tempfile()
-#download.file(url, temp)
-#activity <- tbl_df(read.csv(unz(temp, "activity.csv")))
-#unlink(temp)
 suppressMessages(library(dplyr))
-activity <- tbl_df(read.csv("~/R/workspace/reproducible_research/xactivity.csv")) %>%
+
+url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+temp <- tempfile()
+download.file(url, temp)
+activity <- tbl_df(read.csv(unz(temp, "activity.csv")))%>%
   mutate(date = as.Date(date, "%Y-%m-%d"))
+
+unlink(temp)
 ```
   
 ###  What is mean total number of steps taken per day?
@@ -54,7 +56,9 @@ g <- ggplot(data=daily_steps, aes(x=date, y=total_steps)) +
   geom_bar(stat="identity", colour = "blue", fill="sky blue") + 
   labs(y = "steps") + 
   labs(title = "Total number of steps taken each day") +
-  theme(plot.title = element_text(size = rel(2), face="bold"), axis.title.y = element_text(size = rel(1.5)), axis.title.x = element_text(size = rel(1.5)))
+  theme(plot.title = element_text(size = rel(2), face="bold"), 
+        axis.title.y = element_text(size = rel(1.5)), 
+        axis.title.x = element_text(size = rel(1.5)))
 
 plot(g)
 ```
@@ -168,13 +172,15 @@ g <- ggplot(adjusted_daily_steps, aes(x=date, y=total_steps)) +
   geom_bar(stat="identity", colour = "blue", fill="sky blue") + 
   labs(y = "steps") +
   labs(title = "Total number of steps taken each day") +
-  theme(plot.title = element_text(size = rel(2), face="bold"), axis.title.y = element_text(size = rel(1.5)), axis.title.x = element_text(size = rel(1.5)))
+  theme(plot.title = element_text(size = rel(2), face="bold"), 
+        axis.title.y = element_text(size = rel(1.5)), 
+        axis.title.x = element_text(size = rel(1.5)))
 
 plot(g)
 ```
 
 ![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
-The mean and median total number of steps taken per day, after replacing NA steps with the average for that interval, is **10766.19** and **10766.19** respectively.
+The mean and median total number of steps taken per day, after replacing NA steps with the average for that interval, is **10766.19** and **10766.19** respectively.  
 
 ```r
 activity_replace_na %>% 
@@ -189,9 +195,9 @@ activity_replace_na %>%
 ##       mean median
 ## 1 10765.64  10762
 ```
-
-###  Are there differences in activity patterns between weekdays and weekends?   
    
+###  Are there differences in activity patterns between weekdays and weekends?   
+
 
 ```r
 activity_day_type <- activity_replace_na %>% 
@@ -199,7 +205,7 @@ activity_day_type <- activity_replace_na %>%
   group_by(interval, day_type) %>%
   summarise(mean_steps = floor(mean(fixed_steps)))
 ```
-A panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis)
+A panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis)   
 
 
 ```r
@@ -212,7 +218,7 @@ r <- ggplot(activity_day_type, aes(x=interval, y=mean_steps)) +
   theme(plot.title = element_text(size = rel(2), face="bold"), 
         axis.title.y = element_text(size = rel(1.5)), 
         axis.title.x = element_text(size = rel(1.5))) +
-  theme(strip.text.x = element_text(size=16, face="bold", lineheight=2),
+  theme(strip.text.x = element_text(size=16, face="bold", lineheight=2.0),
           strip.background = element_rect(colour="black", fill="#CCCCFF"))
 
 plot(r)
