@@ -53,12 +53,13 @@ suppressMessages(library(ggplot2))
 g <- ggplot(data=daily_steps, aes(x=date, y=total_steps)) + 
   geom_bar(stat="identity", colour = "blue", fill="sky blue") + 
   labs(y = "steps") + 
-  labs(title = "Total number of steps taken each day") 
+  labs(title = "Total number of steps taken each day") +
+  theme(plot.title = element_text(size = rel(2), face="bold"), axis.title.y = element_text(size = rel(1.5)), axis.title.x = element_text(size = rel(1.5)))
 
 plot(g)
 ```
 
-![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png) 
+![plot of chunk ggplot1](figure/ggplot1-1.png) 
 
 The mean and median total number of steps taken per day is 10766.19 and 10765 respectively.
 
@@ -84,17 +85,20 @@ daily_activity <- activity %>%
   summarise(mean = mean(steps)) 
 
              
-q <- ggplot(daily_activity, aes(x=interval/100, y=mean)) +
+q <- ggplot(daily_activity, aes(x=interval, y=mean)) +
   geom_line() +
   labs(y = "steps") + 
   labs(x = "interval") +
-  labs(title = "The average number of steps taken per interval, averaged across all days") 
+  labs(title = "The average number of steps taken per interval, averaged across all days") +
+  theme(plot.title = element_text(size = rel(2), face="bold"), 
+        axis.title.y = element_text(size = rel(1.5)), 
+        axis.title.x = element_text(size = rel(1.5)))
 
 
 plot(q)
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png) 
+![plot of chunk ggplot2](figure/ggplot2-1.png) 
 
 The **835** 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps.
 
@@ -112,4 +116,107 @@ daily_activity %>%
 ##   interval
 ## 1      835
 ```
+
+###  Imputing missing values
+There are **2304** missing values in the dataset  (coded as `NA`)
+
+```r
+activity %>% filter(is.na(steps)) %>% summarise(num_missing_values = n())
+```
+
+```
+## Source: local data frame [1 x 1]
+## 
+##   num_missing_values
+## 1               2304
+```
+
+Fill in the missing values in the dataset with the average for that interval.
+
+```r
+activity_replace_na <- activity %>% 
+  inner_join(daily_activity, by = "interval" ) %>%
+  mutate(fixed_steps = ifelse(is.na(steps), round(mean), steps))
+
+adjusted_daily_steps <-  activity_replace_na %>%
+  group_by(date) %>% 
+  summarise(total_steps = sum(steps, na.rm = TRUE))
+
+activity_replace_na
+```
+
+```
+## Source: local data frame [17,568 x 5]
+## 
+##    interval steps       date      mean fixed_steps
+## 1         0    NA 2012-10-01 1.7169811           2
+## 2         5    NA 2012-10-01 0.3396226           0
+## 3        10    NA 2012-10-01 0.1320755           0
+## 4        15    NA 2012-10-01 0.1509434           0
+## 5        20    NA 2012-10-01 0.0754717           0
+## 6        25    NA 2012-10-01 2.0943396           2
+## 7        30    NA 2012-10-01 0.5283019           1
+## 8        35    NA 2012-10-01 0.8679245           1
+## 9        40    NA 2012-10-01 0.0000000           0
+## 10       45    NA 2012-10-01 1.4716981           1
+## ..      ...   ...        ...       ...         ...
+```
+
+
+```r
+g <- ggplot(adjusted_daily_steps, aes(x=date, y=total_steps)) + 
+  geom_bar(stat="identity", colour = "blue", fill="sky blue") + 
+  labs(y = "steps") +
+  labs(title = "Total number of steps taken each day") +
+  theme(plot.title = element_text(size = rel(2), face="bold"), axis.title.y = element_text(size = rel(1.5)), axis.title.x = element_text(size = rel(1.5)))
+
+plot(g)
+```
+
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
+The mean and median total number of steps taken per day, after replacing NA steps with the average for that interval, is **10766.19** and **10766.19** respectively.
+
+```r
+activity_replace_na %>% 
+  group_by(date) %>% 
+  summarise(total_steps = sum(fixed_steps, na.rm = TRUE)) %>% 
+  summarise(mean = mean(total_steps), median = median(total_steps))
+```
+
+```
+## Source: local data frame [1 x 2]
+## 
+##       mean median
+## 1 10765.64  10762
+```
+
+###  Are there differences in activity patterns between weekdays and weekends?   
+   
+
+```r
+activity_day_type <- activity_replace_na %>% 
+  mutate(day_type = ifelse(weekdays(date) %in% c("Saturday", "Sunday"), "Weekend", "Weekday")) %>%
+  group_by(interval, day_type) %>%
+  summarise(mean_steps = floor(mean(fixed_steps)))
+```
+A panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis)
+
+
+```r
+r <- ggplot(activity_day_type, aes(x=interval, y=mean_steps)) +
+  facet_wrap(~ day_type, ncol = 1) +
+  geom_line() +
+  labs(y = "steps") + 
+  labs(x = "interval") +
+  labs(title = "The average number of steps taken per interval, averaged across all days") +
+  theme(plot.title = element_text(size = rel(2), face="bold"), 
+        axis.title.y = element_text(size = rel(1.5)), 
+        axis.title.x = element_text(size = rel(1.5))) +
+  theme(strip.text.x = element_text(size=16, face="bold", lineheight=2),
+          strip.background = element_rect(colour="black", fill="#CCCCFF"))
+
+plot(r)
+```
+
+![plot of chunk pannel plot r](figure/pannel plot r-1.png) 
 

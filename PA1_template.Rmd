@@ -43,7 +43,7 @@ activity <- tbl_df(read.csv("~/R/workspace/reproducible_research/xactivity.csv")
 ```
   
 ###  What is mean total number of steps taken per day?
-```{r, echo=TRUE}
+```{r ggplot1, fig.width=14, fig.height=8, echo=TRUE}
 daily_steps <- activity %>% 
   group_by(date) %>% 
   summarise(total_steps = sum(steps, na.rm = TRUE))
@@ -52,7 +52,8 @@ suppressMessages(library(ggplot2))
 g <- ggplot(data=daily_steps, aes(x=date, y=total_steps)) + 
   geom_bar(stat="identity", colour = "blue", fill="sky blue") + 
   labs(y = "steps") + 
-  labs(title = "Total number of steps taken each day") 
+  labs(title = "Total number of steps taken each day") +
+  theme(plot.title = element_text(size = rel(2), face="bold"), axis.title.y = element_text(size = rel(1.5)), axis.title.x = element_text(size = rel(1.5)))
 
 plot(g)
 ```
@@ -65,18 +66,21 @@ daily_steps %>%
 ```
 
 ###  What is the average daily activity pattern?
-```{r}
+```{r ggplot2, fig.width=14, fig.height=8, echo=TRUE}
 daily_activity <- activity %>% 
   filter(steps >= 0) %>% 
   group_by(interval) %>% 
   summarise(mean = mean(steps)) 
 
              
-q <- ggplot(daily_activity, aes(x=interval/100, y=mean)) +
+q <- ggplot(daily_activity, aes(x=interval, y=mean)) +
   geom_line() +
   labs(y = "steps") + 
   labs(x = "interval") +
-  labs(title = "The average number of steps taken per interval, averaged across all days") 
+  labs(title = "The average number of steps taken per interval, averaged across all days") +
+  theme(plot.title = element_text(size = rel(2), face="bold"), 
+        axis.title.y = element_text(size = rel(1.5)), 
+        axis.title.x = element_text(size = rel(1.5)))
 
 
 plot(q)
@@ -89,5 +93,67 @@ daily_activity %>%
   arrange(desc(mean)) %>% 
   slice(1) %>% 
   select(interval)
+```
+
+###  Imputing missing values
+There are **2304** missing values in the dataset  (coded as `NA`)
+```{r, echo=TRUE}
+activity %>% filter(is.na(steps)) %>% summarise(num_missing_values = n())
+```
+
+Fill in the missing values in the dataset with the average for that interval.
+```{r}
+activity_replace_na <- activity %>% 
+  inner_join(daily_activity, by = "interval" ) %>%
+  mutate(fixed_steps = ifelse(is.na(steps), round(mean), steps))
+
+adjusted_daily_steps <-  activity_replace_na %>%
+  group_by(date) %>% 
+  summarise(total_steps = sum(steps, na.rm = TRUE))
+
+activity_replace_na
+```
+
+```{r , fig.width=14, fig.height=8, echo=TRUE}
+g <- ggplot(adjusted_daily_steps, aes(x=date, y=total_steps)) + 
+  geom_bar(stat="identity", colour = "blue", fill="sky blue") + 
+  labs(y = "steps") +
+  labs(title = "Total number of steps taken each day") +
+  theme(plot.title = element_text(size = rel(2), face="bold"), axis.title.y = element_text(size = rel(1.5)), axis.title.x = element_text(size = rel(1.5)))
+
+plot(g)
+```
+The mean and median total number of steps taken per day, after replacing NA steps with the average for that interval, is **10766.19** and **10766.19** respectively.
+```{r}
+activity_replace_na %>% 
+  group_by(date) %>% 
+  summarise(total_steps = sum(fixed_steps, na.rm = TRUE)) %>% 
+  summarise(mean = mean(total_steps), median = median(total_steps))
+```
+
+###  Are there differences in activity patterns between weekdays and weekends?   
+   
+```{r}
+activity_day_type <- activity_replace_na %>% 
+  mutate(day_type = ifelse(weekdays(date) %in% c("Saturday", "Sunday"), "Weekend", "Weekday")) %>%
+  group_by(interval, day_type) %>%
+  summarise(mean_steps = floor(mean(fixed_steps)))
+```
+A panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis)
+
+```{r pannel plot r, fig.width=14, fig.height=16, echo=TRUE}
+r <- ggplot(activity_day_type, aes(x=interval, y=mean_steps)) +
+  facet_wrap(~ day_type, ncol = 1) +
+  geom_line() +
+  labs(y = "steps") + 
+  labs(x = "interval") +
+  labs(title = "The average number of steps taken per interval, averaged across all days") +
+  theme(plot.title = element_text(size = rel(2), face="bold"), 
+        axis.title.y = element_text(size = rel(1.5)), 
+        axis.title.x = element_text(size = rel(1.5))) +
+  theme(strip.text.x = element_text(size=16, face="bold", lineheight=2),
+          strip.background = element_rect(colour="black", fill="#CCCCFF"))
+
+plot(r)
 ```
 
